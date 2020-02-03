@@ -27,6 +27,7 @@ func (w *SubtitleWebservice) ExtractSubtitleAction(filepath string) {
 	track, err := subtitleparser.DecideSubtitleTrack(subs)
 	if err != nil {
 		glog.Errorf("Couldn't decide subs from %v: %v", filepath, err)
+		return
 	}
 	err = subtitleparser.ExtractSubtitleFromFile(filepath, track)
 	if err != nil {
