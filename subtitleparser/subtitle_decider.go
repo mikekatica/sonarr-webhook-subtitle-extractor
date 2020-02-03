@@ -5,9 +5,9 @@ import "errors"
 func DecideSubtitleTrack(subs map[int64]SubtitleTrack) (*int64, error) {
 	//var track int64
 	if len(subs) == 1 {
-		for _, value := range subs {
+		for key, value := range subs {
 			if value.Codec == SSA || value.Codec == ASS {
-				return &value.TrackID, nil
+				return &key, nil
 			}
 		}
 	} else if len(subs) < 1 {
