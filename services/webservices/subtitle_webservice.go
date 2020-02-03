@@ -15,22 +15,26 @@ type SubtitleWebservice struct {
 	BindAddress string
 }
 
+type SimpleExtractRequest struct {
+	Filepath string `json:"filepath"`
+}
+
 func (w *SubtitleWebservice) ExtractSubtitleAction(filepath string) {
 	subs, err := subtitleparser.ExtractSubtitleInfo(filepath)
 	if err != nil {
 		glog.Errorf("Couldn't extract sub track info from %v: %v", filepath, err)
 	}
-	trackUID, err := subtitleparser.DecideSubtitleTrack(subs)
+	track, err := subtitleparser.DecideSubtitleTrack(subs)
 	if err != nil {
 		glog.Errorf("Couldn't decide subs from %v: %v", filepath, err)
 	}
-	err = subtitleparser.ExtractSubtitleFromFile(filepath, subs[*trackUID])
+	err = subtitleparser.ExtractSubtitleFromFile(filepath, track)
 	if err != nil {
 		glog.Errorf("Couldn't extract subs from %v: %v", filepath, err)
 	}
 }
 
-func (w *SubtitleWebservice) ExtractSubtitleAPI() gin.HandlerFunc {
+func (w *SubtitleWebservice) ExtractSubtitleSonarrAPI() gin.HandlerFunc {
 	return func(context *gin.Context) {
 		var event types.SonarrEvent
 		err := context.Copy().MustBindWith(&event, binding.JSON)
@@ -48,13 +52,28 @@ func (w *SubtitleWebservice) ExtractSubtitleAPI() gin.HandlerFunc {
 	}
 }
 
+func (w *SubtitleWebservice) ExtractSubtitleSimpleAPI() gin.HandlerFunc {
+	return func(context *gin.Context) {
+		var event SimpleExtractRequest
+		err := context.Copy().MustBindWith(&event, binding.JSON)
+		glog.V(4).Infof("Recieved a request: %v", event)
+		if err != nil {
+			glog.Errorf("Received an error processing the request: %v", err)
+			return
+		}
+		context.JSON(http.StatusOK, gin.H{})
+		go w.ExtractSubtitleAction(event.Filepath)
+	}
+}
+
 func New(bindaddr string) *SubtitleWebservice {
 	r := gin.Default()
 	svc := SubtitleWebservice{
 		Engine:      r,
 		BindAddress: bindaddr,
 	}
-	r.POST("/extract", svc.ExtractSubtitleAPI())
+	r.POST("/extract/sonarr", svc.ExtractSubtitleSonarrAPI())
+	r.POST("/extract/simple", svc.ExtractSubtitleSimpleAPI())
 	return &svc
 }
 

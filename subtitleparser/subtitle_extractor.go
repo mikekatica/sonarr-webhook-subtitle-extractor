@@ -38,7 +38,7 @@ var SubtitleExtensionMap = map[string]string{
 	"S_TEXT/ASS": "ass",
 }
 
-func ExtractSubtitleFromFile(pathIn string, subtrack SubtitleTrack) error {
+func ExtractSubtitleFromFile(pathIn string, subtrack *SubtitleTrack) error {
 	mkvPath, mkvFilename := filepath.Split(pathIn)
 	mkvArr := strings.Split(mkvFilename, ".")
 	glog.V(5).Infof("Resolved Filename to %v", mkvArr)
