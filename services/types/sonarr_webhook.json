@@ -1,0 +1,91 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "title": "SonarrEvent",
+    "id": "https://github.com/Sonarr/Sonarr/wiki/Webhook-Schema",
+    "description": "Sonarr Webhook Event",
+    "type": "object",
+    "anyOf": [
+        {
+            "properties": {
+                "eventType": { "enum": ["Grab"] }
+            },
+            "required": ["eventType", "series", "episodes", "release"]
+        },
+        {
+            "properties": {
+                "eventType": { "enum": ["Download"] }
+            },
+            "required": ["eventType", "series", "episodes", "episodeFile", "isUpgrade"]
+        },
+        {
+            "properties": {
+                "eventType": { "enum": ["Rename"] }
+            },
+            "required": ["eventType", "series"]
+        },
+        {
+            "properties": {
+                "eventType": { "enum": ["Test"] }
+            },
+            "required": ["eventType", "series", "episodes"]
+        }
+    ],
+    "properties":{
+        "eventType": { "enum": ["Download", "Grab", "Rename", "Test"] },
+        "series": {
+            "type": "object",
+            "required": ["id", "title", "path"],
+            "properties": {
+                "id": { "type": "integer", "minimum": 1 },
+                "title": { "type": "string" },
+                "path": { "type": "string" },
+                "tvdbId": { "type": "integer", "minimum": 1 }
+            }
+        },
+        "episodes": {
+            "type": ["array", "null"],
+            "minItems": 1,
+            "items": {
+                "type": "object",
+                "required": ["id", "episodeNumber", "seasonNumber", "title"],
+                "properties": {
+                    "id": { "type": "integer", "minimum": 0 },
+                    "episodeNumber": { "type": "integer", "minimum": 0 },
+                    "seasonNumber": { "type": "integer", "minimum": 0 },
+                    "title": { "type": "string" },
+                    "airDate": { "type": "string", "format": "date" },
+                    "airDateUtc": { "type": "string", "format": "date-time" },
+                    "quality": { "type": "string", "description": "Deprecated: will be removed in a future version" },
+                    "qualityVersion": { "type": "integer", "minimum": 1, "description": "Deprecated: will be removed in a future version" },
+                    "releaseGroup": { "type": "string", "description": "Deprecated: will be removed in a future version" },
+                    "sceneName": { "type": "string", "description": "Deprecated: will be removed in a future version" }
+                }
+            }
+        },
+        "release": {
+            "type": "object",
+            "properties": {
+                "quality": { "type": "string"},
+                "qualityVersion": { "type": "integer", "minimum": 1 },
+                "releaseGroup": { "type": "string" },
+                "releaseTitle": { "type": "string" },
+                "indexer": { "type": "string" },
+                "size": { "type": "integer", "minimum": 0}
+            }
+        },
+        "episodeFile": {
+            "type": "object",
+            "required": ["id", "relativePath", "path"],
+            "properties": {
+                "id": { "type": "integer", "minimum": 1 },
+                "relativePath": { "type": "string" },
+                "path": { "type": "string" },
+                "quality": { "type": "string" },
+                "qualityVersion": { "type": "integer", "minimum": 1 },
+                "releaseGroup": { "type": "string" },
+                "sceneName": { "type": "string" }
+            }
+        },
+        "isUpgrade": { "type": "boolean" }
+    }
+}

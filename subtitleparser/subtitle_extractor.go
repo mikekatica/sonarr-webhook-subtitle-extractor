@@ -2,6 +2,7 @@ package subtitleparser
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -10,6 +11,28 @@ import (
 	"github.com/golang/glog"
 )
 
+// Copy the src file to dst. Any existing file will be overwritten and will not
+// copy file attributes.
+func Copy(src, dst string) error {
+	in, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer in.Close()
+
+	out, err := os.Create(dst)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+
+	_, err = io.Copy(out, in)
+	if err != nil {
+		return err
+	}
+	return out.Close()
+}
+
 var SubtitleExtensionMap = map[string]string{
 	"S_TEXT/SSA": "ssa",
 	"S_TEXT/ASS": "ass",
@@ -17,23 +40,26 @@ var SubtitleExtensionMap = map[string]string{
 
 func ExtractSubtitleFromFile(pathIn string, subtrack SubtitleTrack) error {
 	mkvPath, mkvFilename := filepath.Split(pathIn)
-	mkvArr := strings.Split(mkvPath, ".")
+	mkvArr := strings.Split(mkvFilename, ".")
+	glog.V(5).Infof("Resolved Filename to %v", mkvArr)
 	mkvFilenameNoExtension := strings.Join(mkvArr[:len(mkvArr)-1], ".")
 	subFilename := mkvFilenameNoExtension + ".default." + SubtitleExtensionMap[subtrack.Codec]
 	subTempPath := "/tmp/" + subFilename
 	subFullpath := mkvPath + subFilename
-	subPathArgs := fmt.Sprintf("%d:%s", subtrack.TrackID, subTempPath)
+	subPathArgs := fmt.Sprintf("%d:%s", subtrack.TrackID-1, subTempPath)
 	args := []string{pathIn, "tracks", subPathArgs}
 	cmd := exec.Command("mkvextract", args...)
 	out, err := cmd.CombinedOutput()
+	outStr := string(out)
 	if err != nil {
 		glog.Errorf("Could not extract subs from %v, %v", mkvFilename, err)
+		glog.Infoln("Output from mkvextract:")
+		glog.Infof("%v\n", outStr)
 		return err
 	}
-	outStr := string(out)
 	glog.Infoln("Output from mkvextract:")
 	glog.Infof("%v\n", outStr)
-	err = os.Rename(subTempPath, subFullpath)
+	err = Copy(subTempPath, subFullpath)
 	if err != nil {
 		glog.Errorf("Could not move sub file from %v to %v: %v", subTempPath, subFullpath, err)
 		return err

@@ -2,6 +2,7 @@ package webservice
 
 import (
 	"net/http"
+	"sonarr-webhook-subtitle-extractor/services/types"
 	"sonarr-webhook-subtitle-extractor/subtitleparser"
 
 	"github.com/gin-gonic/gin"
@@ -12,10 +13,6 @@ import (
 type SubtitleWebservice struct {
 	Engine      *gin.Engine
 	BindAddress string
-}
-
-type ExtractSubtitlesRequest struct {
-	Filepath string `json:"filepath"`
 }
 
 func (w *SubtitleWebservice) ExtractSubtitleAction(filepath string) {
@@ -35,13 +32,18 @@ func (w *SubtitleWebservice) ExtractSubtitleAction(filepath string) {
 
 func (w *SubtitleWebservice) ExtractSubtitleAPI() gin.HandlerFunc {
 	return func(context *gin.Context) {
-		var reqBody ExtractSubtitlesRequest
-		err := context.MustBindWith(&reqBody, binding.JSON)
-		if err == nil {
-			glog.V(4).Infof("Recieved a request: %v", reqBody)
-			context.JSON(http.StatusOK, gin.H{})
-			context.Next()
+		var event types.SonarrEvent
+		err := context.Copy().MustBindWith(&event, binding.JSON)
+		glog.V(4).Infof("Recieved a request: %v", event)
+		if err != nil {
+			glog.Errorf("Received an error processing the request: %v", err)
 			return
+		}
+		context.JSON(http.StatusOK, gin.H{})
+		if event.EventType != nil && event.EventType == "Download" {
+			go w.ExtractSubtitleAction(event.EpisodeFile.Path)
+		} else if event.EventType == "Test" {
+			glog.Infof("Sonarr is testing, and it is working: %v", event)
 		}
 	}
 }
