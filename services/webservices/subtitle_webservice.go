@@ -26,7 +26,7 @@ type SimpleExtractRequest struct {
 type BulkExtractRequest struct {
 	Basepath      string `json:"basepath"`
 	FileGlob      string `json:"fileglob"`
-	TrackOverride int64  `json:"tracknum"`
+	TrackOverride int    `json:"tracknum"`
 }
 
 func (w *SubtitleWebservice) ExtractSubtitleAction(filepath string) {
@@ -62,7 +62,7 @@ func (w *SubtitleWebservice) ExtractSubtitleAction(filepath string) {
 	}
 }
 
-func (w *SubtitleWebservice) ExtractSubtitleAction2(filepath string, track int64) {
+func (w *SubtitleWebservice) ExtractSubtitleAction2(filepath string, track int) {
 	waitForFile := make(chan os.FileInfo, 1)
 	var fileStatErr error
 	glog.Infof("Waiting for %v to exist.", filepath)
@@ -85,8 +85,8 @@ func (w *SubtitleWebservice) ExtractSubtitleAction2(filepath string, track int64
 		glog.Errorf("Couldn't extract sub track info from %v: %v", filepath, err)
 	}
 	glog.V(4).Infof("Found subtitles: %v", subs)
-	sub := subs[track]
-	err = subtitleparser.ExtractSubtitleFromFile(filepath, &sub)
+	sub := subtitleparser.GetSubtrackByAbsoluteIndex(subs, track-1)
+	err = subtitleparser.ExtractSubtitleFromFile(filepath, sub)
 	if err != nil {
 		glog.Errorf("Couldn't extract subs from %v: %v", filepath, err)
 	}
