@@ -9,6 +9,7 @@ RUN gom install && gom build
 FROM debian:buster
 
 #Install mkvextract
+RUN apt-get update && apt-get install wget
 RUN echo 'deb https://mkvtoolnix.download/debian/ buster main' > /etc/apt/sources.list.d/mkvtoolnix.download.list && \
   wget -q -O - https://mkvtoolnix.download/gpg-pub-moritzbunkus.txt | apt-key add - && \
   apt-get update && apt-get -y install mkvtoolnix
