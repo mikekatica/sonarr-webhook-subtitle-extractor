@@ -70,3 +70,27 @@ func GetForcedTrack(subs map[int64]SubtitleTrack) (bool, *SubtitleTrack) {
 	}
 	return hasForcedTrack, forcedTrack
 }
+
+func GetSubtitleTrack(subs map[int64]SubtitleTrack, track int64) (*SubtitleTrack, error) {
+	//var track int64
+	if len(subs) == 1 {
+		glog.V(4).Info("Found one subtitle. Going to extract this one. Easy.")
+		for key, value := range subs {
+			if value.Codec == SSA || value.Codec == ASS {
+				outSub := subs[key]
+				return &outSub, nil
+			}
+			glog.V(4).Info("Subtitle track is not ASS or SSA, not extracting.")
+		}
+	} else if len(subs) < 1 {
+		return nil, errors.New("No subtitle tracks to extract")
+	} else {
+		for key, value := range subs {
+			if (value.Codec == SSA || value.Codec == ASS) && value.TrackID == track {
+				outSub := subs[key]
+				return &outSub, nil
+			}
+		}
+	}
+	return nil, errors.New("Could not find a suitable track to extract")
+}

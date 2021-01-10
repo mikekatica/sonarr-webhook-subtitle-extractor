@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/alessio/shellescape"
 	"github.com/golang/glog"
 )
 
@@ -48,7 +49,7 @@ func ExtractSubtitleFromFile(pathIn string, subtrack *SubtitleTrack) error {
 	subTempPath := "/tmp/" + subFilename
 	subFullpath := mkvPath + subFilename
 	subPathArgs := fmt.Sprintf("%d:%s", subtrack.TrackID-1, subTempPath)
-	args := []string{pathIn, "tracks", subPathArgs}
+	args := []string{shellescape.Quote(pathIn), "tracks", shellescape.Quote(subPathArgs)}
 	glog.V(5).Infof("Using mkvextract args: %v", args)
 	cmd := exec.Command("mkvextract", args...)
 	out, err := cmd.CombinedOutput()
@@ -67,13 +68,4 @@ func ExtractSubtitleFromFile(pathIn string, subtrack *SubtitleTrack) error {
 		return err
 	}
 	return nil
-}
-
-func GetSubtrackByAbsoluteIndex(subs map[int64]SubtitleTrack, absoluteIndex int) *SubtitleTrack {
-	keys := make([]int64, 0, len(subs))
-	for k := range subs {
-		keys = append(keys, k)
-	}
-	sub := subs[keys[absoluteIndex]]
-	return &sub
 }
