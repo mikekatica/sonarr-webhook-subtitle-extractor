@@ -1,15 +1,16 @@
-package webservice
+package webservices
 
 import (
 	"net/http"
 	"os"
 	"path"
+	"path/filepath"
 	"sonarr-webhook-subtitle-extractor/services/types"
 	"sonarr-webhook-subtitle-extractor/subtitleparser"
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/gin-gonic/gin/binding"
+	"github.com/gobwas/glob"
 	"github.com/golang/glog"
 )
 
@@ -20,6 +21,12 @@ type SubtitleWebservice struct {
 
 type SimpleExtractRequest struct {
 	Filepath string `json:"filepath"`
+}
+
+type BulkExtractRequest struct {
+	Basepath      string `json:"basepath"`
+	FileGlob      string `json:"fileglob"`
+	TrackOverride int64  `json:"tracknum"`
 }
 
 func (w *SubtitleWebservice) ExtractSubtitleAction(filepath string) {
@@ -55,10 +62,40 @@ func (w *SubtitleWebservice) ExtractSubtitleAction(filepath string) {
 	}
 }
 
+func (w *SubtitleWebservice) ExtractSubtitleAction2(filepath string, track int64) {
+	waitForFile := make(chan os.FileInfo, 1)
+	var fileStatErr error
+	glog.Infof("Waiting for %v to exist.", filepath)
+	go func() {
+		for _, fileStatErr = os.Stat(filepath); os.IsNotExist(fileStatErr); _, fileStatErr = os.Stat(filepath) {
+			time.Sleep(300 * time.Millisecond)
+		}
+		finfo, _ := os.Stat(filepath)
+		waitForFile <- finfo
+	}()
+	select {
+	case _ = <-waitForFile:
+		glog.Infof("File %v exists and is written", filepath)
+	case <-time.After(15 * time.Minute):
+		glog.Warningf("File %v does not exist after 15 minute timeout", filepath)
+		return
+	}
+	subs, err := subtitleparser.ExtractSubtitleInfo(filepath)
+	if err != nil {
+		glog.Errorf("Couldn't extract sub track info from %v: %v", filepath, err)
+	}
+	glog.V(4).Infof("Found subtitles: %v", subs)
+	sub := subs[track]
+	err = subtitleparser.ExtractSubtitleFromFile(filepath, &sub)
+	if err != nil {
+		glog.Errorf("Couldn't extract subs from %v: %v", filepath, err)
+	}
+}
+
 func (w *SubtitleWebservice) ExtractSubtitleSonarrAPI() gin.HandlerFunc {
 	return func(context *gin.Context) {
 		var event types.SonarrEvent
-		err := context.Copy().MustBindWith(&event, binding.JSON)
+		err := context.Copy().ShouldBindJSON(&event)
 		glog.V(4).Infof("Recieved a request: %v", event)
 		if err != nil {
 			glog.Errorf("Received an error processing the request: %v", err)
@@ -79,7 +116,7 @@ func (w *SubtitleWebservice) ExtractSubtitleSonarrAPI() gin.HandlerFunc {
 func (w *SubtitleWebservice) ExtractSubtitleSimpleAPI() gin.HandlerFunc {
 	return func(context *gin.Context) {
 		var event SimpleExtractRequest
-		err := context.Copy().MustBindWith(&event, binding.JSON)
+		err := context.Copy().ShouldBindJSON(&event)
 		glog.V(4).Infof("Recieved a request: %v", event)
 		if err != nil {
 			glog.Errorf("Received an error processing the request: %v", err)
@@ -87,6 +124,34 @@ func (w *SubtitleWebservice) ExtractSubtitleSimpleAPI() gin.HandlerFunc {
 		}
 		context.JSON(http.StatusOK, gin.H{})
 		go w.ExtractSubtitleAction(event.Filepath)
+	}
+}
+
+func (w *SubtitleWebservice) ExtractSubtitleBulkAPI() gin.HandlerFunc {
+	return func(context *gin.Context) {
+		var event BulkExtractRequest
+		err := context.Copy().ShouldBindJSON(&event)
+		glog.V(4).Infof("Recieved a request: %v", event)
+		if err != nil {
+			glog.Errorf("Received an error processing the request: %v", err)
+			return
+		}
+		context.JSON(http.StatusOK, gin.H{})
+		fileglob := glob.MustCompile(event.FileGlob)
+		filepath.Walk(event.Basepath,
+			func(path string, info os.FileInfo, err error) error {
+				if fileglob.Match(path) {
+					if err != nil {
+						glog.Errorf("Found a file to process at %v but there was an error: %v", path, err)
+						return err
+					}
+					glog.V(4).Infof("Processing file found at: %v", path)
+					go w.ExtractSubtitleAction2(path, event.TrackOverride)
+				} else if err != nil {
+					return err
+				}
+				return nil
+			})
 	}
 }
 
@@ -98,6 +163,7 @@ func New(bindaddr string) *SubtitleWebservice {
 	}
 	r.POST("/extract/sonarr", svc.ExtractSubtitleSonarrAPI())
 	r.POST("/extract/simple", svc.ExtractSubtitleSimpleAPI())
+	r.POST("/extract/bulk", svc.ExtractSubtitleBulkAPI())
 	return &svc
 }
 

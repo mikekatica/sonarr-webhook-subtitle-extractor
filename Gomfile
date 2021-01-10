@@ -1,0 +1,4 @@
+gom 'github.com/gin-gonic/gin'
+gom 'github.com/golang/glog'
+gom 'github.com/gobwas/glob'
+gom 'github.com/remko/go-mkvparse'
