@@ -50,7 +50,7 @@ func (p *SubtitleTrackHandler) HandleMasterBegin(id mkvparse.ElementID, info mkv
 	glog.Infof("MasterBegin: Got element ID of %v", id)
 	if id == mkvparse.TrackEntryElement {
 		glog.V(4).Infof("Found a subtitle, Descending into element")
-		p.currentLanguage = &defaultlang
+		p.currentLanguage = nil
 		p.currentCodec = nil
 	}
 	return true, nil
@@ -71,12 +71,13 @@ func (p *SubtitleTrackHandler) HandleMasterEnd(id mkvparse.ElementID, info mkvpa
 }
 
 func (p *SubtitleTrackHandler) HandleString(id mkvparse.ElementID, value string, info mkvparse.ElementInfo) error {
+
 	switch id {
 	case mkvparse.LanguageElement:
 		glog.V(4).Infof("Found a language for the track of %v", value)
-		p.currentLanguage = &value
 	case mkvparse.LanguageIETFElement:
 		glog.V(4).Infof("Found an ietf language for the track of %v", value)
+		p.currentLanguage = &value
 	case mkvparse.CodecIDElement:
 		glog.V(4).Infof("Found a codec id for the track of %v", value)
 		p.currentCodec = &value

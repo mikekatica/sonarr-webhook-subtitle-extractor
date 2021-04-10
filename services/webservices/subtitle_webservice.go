@@ -5,8 +5,9 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"sonarr-webhook-subtitle-extractor/services/types"
-	"sonarr-webhook-subtitle-extractor/subtitleparser"
+	"strings"
+	"github.com/mikekatica/sonarr-webhook-subtitle-extractor/services/types"
+	"github.com/mikekatica/sonarr-webhook-subtitle-extractor/subtitleparser"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -29,7 +30,7 @@ type BulkExtractRequest struct {
 	TrackOverride int64  `json:"tracknum"`
 }
 
-func (w *SubtitleWebservice) ExtractSubtitleAction(filepath string) {
+func (w *SubtitleWebservice) ExtractSubtitleAction(lang subtitleparser.SubtitleLanguageDefault, filepath string) {
 	waitForFile := make(chan os.FileInfo, 1)
 	var fileStatErr error
 	glog.Infof("Waiting for %v to exist.", filepath)
@@ -51,7 +52,7 @@ func (w *SubtitleWebservice) ExtractSubtitleAction(filepath string) {
 	if err != nil {
 		glog.Errorf("Couldn't extract sub track info from %v: %v", filepath, err)
 	}
-	track, err := subtitleparser.DecideSubtitleTrack(subs)
+	track, err := subtitleparser.DecideSubtitleTrack(lang, subs)
 	if err != nil {
 		glog.Errorf("Couldn't decide subs from %v: %v", filepath, err)
 		return
@@ -98,6 +99,13 @@ func (w *SubtitleWebservice) ExtractSubtitleAction2(filepath string, track int64
 
 func (w *SubtitleWebservice) ExtractSubtitleSonarrAPI() gin.HandlerFunc {
 	return func(context *gin.Context) {
+		defaultLang := strings.ReplaceAll(context.Param("lang"), "/", "")
+		var lang *string
+		lang = nil
+		if defaultLang != "" {
+			glog.V(4).Infof("Looking for language: %v", defaultLang)
+			lang = &defaultLang
+		}
 		var event types.SonarrEvent
 		err := context.Copy().ShouldBindJSON(&event)
 		glog.V(4).Infof("Recieved a request: %v", event)
@@ -110,7 +118,7 @@ func (w *SubtitleWebservice) ExtractSubtitleSonarrAPI() gin.HandlerFunc {
 			glog.V(5).Infof("Series Info: %v", event.Series)
 			glog.V(5).Infof("Episode File Info: %v", event.EpisodeFile)
 			copiedFilePath := path.Join(event.Series.Path, event.EpisodeFile.RelativePath)
-			go w.ExtractSubtitleAction(copiedFilePath)
+			go w.ExtractSubtitleAction(subtitleparser.SubtitleLanguageDefault{DefaultLang: lang}, copiedFilePath)
 		} else if event.EventType == "Test" {
 			glog.Infof("Sonarr is testing, and it is working: %v", event)
 		}
@@ -119,6 +127,13 @@ func (w *SubtitleWebservice) ExtractSubtitleSonarrAPI() gin.HandlerFunc {
 
 func (w *SubtitleWebservice) ExtractSubtitleSimpleAPI() gin.HandlerFunc {
 	return func(context *gin.Context) {
+		defaultLang := strings.ReplaceAll(context.Param("lang"), "/", "")
+		var lang *string
+		lang = nil
+		if defaultLang != "" {
+			glog.V(4).Infof("Looking for language: %v", defaultLang)
+			lang = &defaultLang
+		}
 		var event SimpleExtractRequest
 		err := context.Copy().ShouldBindJSON(&event)
 		glog.V(4).Infof("Recieved a request: %v", event)
@@ -127,7 +142,7 @@ func (w *SubtitleWebservice) ExtractSubtitleSimpleAPI() gin.HandlerFunc {
 			return
 		}
 		context.JSON(http.StatusOK, gin.H{})
-		go w.ExtractSubtitleAction(event.Filepath)
+		go w.ExtractSubtitleAction(subtitleparser.SubtitleLanguageDefault{DefaultLang: lang}, event.Filepath)
 	}
 }
 
@@ -165,8 +180,8 @@ func New(bindaddr string) *SubtitleWebservice {
 		Engine:      r,
 		BindAddress: bindaddr,
 	}
-	r.POST("/extract/sonarr", svc.ExtractSubtitleSonarrAPI())
-	r.POST("/extract/simple", svc.ExtractSubtitleSimpleAPI())
+	r.POST("/extract/sonarr/*lang", svc.ExtractSubtitleSonarrAPI())
+	r.POST("/extract/simple/*lang", svc.ExtractSubtitleSimpleAPI())
 	r.POST("/extract/bulk", svc.ExtractSubtitleBulkAPI())
 	return &svc
 }

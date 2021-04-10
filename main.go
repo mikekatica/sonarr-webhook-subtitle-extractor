@@ -2,7 +2,7 @@ package main
 
 import (
 	"flag"
-	"sonarr-webhook-subtitle-extractor/services/webservices"
+	"github.com/mikekatica/sonarr-webhook-subtitle-extractor/services/webservices"
 
 	"github.com/golang/glog"
 )

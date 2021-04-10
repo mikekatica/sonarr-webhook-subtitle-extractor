@@ -6,7 +6,11 @@ import (
 	"github.com/golang/glog"
 )
 
-func DecideSubtitleTrack(subs map[int64]SubtitleTrack) (*SubtitleTrack, error) {
+type SubtitleLanguageDefault struct {
+	DefaultLang *string
+}
+
+func DecideSubtitleTrack(lang SubtitleLanguageDefault, subs map[int64]SubtitleTrack) (*SubtitleTrack, error) {
 	//var track int64
 	if len(subs) == 1 {
 		glog.V(4).Info("Found one subtitle. Going to extract this one. Easy.")
@@ -25,8 +29,35 @@ func DecideSubtitleTrack(subs map[int64]SubtitleTrack) (*SubtitleTrack, error) {
 	} else if hasForced, forcedTrack := GetForcedTrack(subs); hasForced && forcedTrack != nil {
 		glog.V(4).Infof("Found a forced subtitle track %v, extracting this one.", forcedTrack.TrackID)
 		return forcedTrack, nil
+	} else if lang.DefaultLang != nil{
+		if hasMatching, matchingTrack := GetLangMatchingTrack(*lang.DefaultLang, subs); hasMatching && matchingTrack != nil {
+			glog.V(4).Infof("Found a language matching subtitle track %v, extracting this one.", matchingTrack.TrackID)
+			return matchingTrack, nil
+		}
 	}
 	return nil, errors.New("Could not find a suitable track to extract")
+}
+
+func GetLangMatchingTrack(lang string, subs map[int64]SubtitleTrack) (bool, *SubtitleTrack) {
+	hasMatchingTrack := false
+	var matchingTrack *SubtitleTrack
+	matchingTrack = nil
+	for key, value := range subs {
+		if value.Language == lang && !hasMatchingTrack {
+			hasMatchingTrack = true
+			outSub := subs[key]
+			matchingTrack = &outSub
+		} else if value.Language == lang && hasMatchingTrack {
+			glog.V(4).Infof("Found 2 matching tracks, %v and %v. Not sure how this happended, but I guess it does sometimes.", matchingTrack.TrackID, value.TrackID)
+			glog.V(4).Infof("Not assuming a track, going to look for a default or forced track.")
+			return false, nil
+		}
+	}
+	if matchingTrack != nil && matchingTrack.Codec != SSA && matchingTrack.Codec != ASS {
+		glog.V(4).Info("Subtitle track is not ASS or SSA, not extracting.")
+		return false, nil
+	}
+	return hasMatchingTrack, matchingTrack
 }
 
 func GetDefaultTrack(subs map[int64]SubtitleTrack) (bool, *SubtitleTrack) {
