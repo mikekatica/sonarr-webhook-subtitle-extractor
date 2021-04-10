@@ -24,7 +24,7 @@ const (
 	ASS string = "S_TEXT/ASS"
 )
 
-var defaultlang = "eng"
+var defaultlang = "en"
 
 type SubtitleTrack struct {
 	TrackID  int64
@@ -50,7 +50,7 @@ func (p *SubtitleTrackHandler) HandleMasterBegin(id mkvparse.ElementID, info mkv
 	glog.Infof("MasterBegin: Got element ID of %v", id)
 	if id == mkvparse.TrackEntryElement {
 		glog.V(4).Infof("Found a subtitle, Descending into element")
-		p.currentLanguage = nil
+		p.currentLanguage = &defaultlang
 		p.currentCodec = nil
 	}
 	return true, nil
