@@ -1,15 +1,13 @@
-FROM golang:1.13.7-buster as builder
+FROM golang:1.16.3-buster as builder
 
 WORKDIR /go/src/sonarr-webhook-subtitle-extractor
 COPY . .
-RUN go get github.com/mattn/gom
-RUN go get github.com/go-playground/validator
-RUN gom install && gom build
+RUN go get && go build
 
 FROM debian:buster
 
 #Install mkvextract
-RUN apt-get update && apt-get install -qy wget
+RUN apt-get update && apt-get install -qy wget gnupg2
 RUN echo 'deb https://mkvtoolnix.download/debian/ buster main' > /etc/apt/sources.list.d/mkvtoolnix.download.list && \
   wget -q -O - https://mkvtoolnix.download/gpg-pub-moritzbunkus.txt | apt-key add - && \
   apt-get update && apt-get -y install mkvtoolnix
