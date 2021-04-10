@@ -1,5 +1,0 @@
-gom 'github.com/gin-gonic/gin', :commit => 'a28cc088b5e84cb00430f4b32f2b016725a9035a'
-gom 'github.com/golang/glog', :commit => '23def4e6c14b4da8ac2ed8007337bc5eb5007998'
-gom 'github.com/gobwas/glob', :commit => 'e7a84e9525fe90abcda167b604e483cc959ad4aa'
-gom 'github.com/remko/go-mkvparse', :commit => '007728ac78ce1dc466d0037ceb3571752a9225eb'
-gom 'github.com/alessio/shellescape', :commit => 'be0896646a3f2d59dc1de4d149beb07c5b2c25c0'
