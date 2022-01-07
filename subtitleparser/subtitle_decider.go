@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"github.com/golang/glog"
+	"golang.org/x/text/language"
 )
 
 type SubtitleLanguageDefault struct {
@@ -39,25 +40,27 @@ func DecideSubtitleTrack(lang SubtitleLanguageDefault, subs map[int64]SubtitleTr
 }
 
 func GetLangMatchingTrack(lang string, subs map[int64]SubtitleTrack) (bool, *SubtitleTrack) {
-	hasMatchingTrack := false
-	var matchingTrack *SubtitleTrack
-	matchingTrack = nil
+	availableLangs := []language.Tag{}
+	keys := []int64{}
 	for key, value := range subs {
-		if value.Language == lang && !hasMatchingTrack {
-			hasMatchingTrack = true
-			outSub := subs[key]
-			matchingTrack = &outSub
-		} else if value.Language == lang && hasMatchingTrack {
-			glog.V(4).Infof("Found 2 matching tracks, %v and %v. Not sure how this happended, but I guess it does sometimes.", matchingTrack.TrackID, value.TrackID)
-			glog.V(4).Infof("Not assuming a track, going to look for a default or forced track.")
-			return false, nil
+		ltag, err := language.Parse(value.Language)
+		if err == nil {
+			keys = append(keys, key)
+			availableLangs = append(availableLangs, ltag)
+		} else {
+			glog.V(4).Infof("Could not process language %v, no match found", value.Language)
 		}
 	}
-	if matchingTrack != nil && matchingTrack.Codec != SSA && matchingTrack.Codec != ASS {
-		glog.V(4).Info("Subtitle track is not ASS or SSA, not extracting.")
+	matcher := language.NewMatcher(availableLangs)
+	langTag, idx, conf := matcher.Match(language.MustParse(lang))
+	glog.V(3).Infof("A Language match was found, '%v' with %v confidence", langTag, conf)
+	if conf >= language.High {
+		track := subs[keys[idx]]
+		return true, &track
+	} else {
+		glog.V(4).Infof("Only High and Exact matches are considered")
 		return false, nil
 	}
-	return hasMatchingTrack, matchingTrack
 }
 
 func GetDefaultTrack(subs map[int64]SubtitleTrack) (bool, *SubtitleTrack) {

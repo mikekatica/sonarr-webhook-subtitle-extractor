@@ -75,6 +75,9 @@ func (p *SubtitleTrackHandler) HandleString(id mkvparse.ElementID, value string,
 	switch id {
 	case mkvparse.LanguageElement:
 		glog.V(4).Infof("Found a language for the track of %v", value)
+		if p.currentLanguage == nil {
+			p.currentLanguage = &value
+		}
 	case mkvparse.LanguageIETFElement:
 		glog.V(4).Infof("Found an ietf language for the track of %v", value)
 		p.currentLanguage = &value
