@@ -47,7 +47,7 @@ func ExtractSubtitleFromFile(pathIn string, subtrack *SubtitleTrack) error {
 	subFilename := mkvFilenameNoExtension + ".default." + SubtitleExtensionMap[subtrack.Codec]
 	subTempPath := "/tmp/" + subFilename
 	subFullpath := mkvPath + subFilename
-	err := ffmpeg.Input(pathIn).Get(strconv.FormatInt(subtrack.TrackID, 10)).Output(subTempPath).OverWriteOutput().Run()
+	err := ffmpeg.Input(pathIn).Get(strconv.FormatInt(subtrack.TrackID-1, 10)).Output(subTempPath).ErrorToStdOut().OverWriteOutput().Run()
 	if err != nil {
 		glog.Errorf("Could not extract subs from %v, %v", mkvFilename, err)
 		return err
