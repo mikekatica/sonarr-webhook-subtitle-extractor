@@ -4,13 +4,11 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"strconv"
 
-	"github.com/alessio/shellescape"
-	"github.com/u2takey/ffmpeg-go"
+	"github.com/u2takey/ffmpeg-go" as ffmpeg
 	"github.com/golang/glog"
 )
 
@@ -50,7 +48,7 @@ func ExtractSubtitleFromFile(pathIn string, subtrack *SubtitleTrack) error {
 	subFilename := mkvFilenameNoExtension + ".default." + SubtitleExtensionMap[subtrack.Codec]
 	subTempPath := "/tmp/" + subFilename
 	subFullpath := mkvPath + subFilename
-	err := ffmpeg.Input(pathIn).Get(strconv.Itoa(subtrack.TrackID)).Output(subTempPath).OverWriteOutput().Run()
+	err := ffmpeg.Input(pathIn).Get(strconv.FormatInt(subtrack.TrackID, 10)).Output(subTempPath).OverWriteOutput().Run()
 	if err != nil {
 		glog.Errorf("Could not extract subs from %v, %v", mkvFilename, err)
 		return err
