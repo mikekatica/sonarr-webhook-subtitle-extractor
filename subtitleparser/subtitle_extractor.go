@@ -7,8 +7,10 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"strconv"
 
 	"github.com/alessio/shellescape"
+	"github.com/u2takey/ffmpeg-go"
 	"github.com/golang/glog"
 )
 
@@ -48,20 +50,11 @@ func ExtractSubtitleFromFile(pathIn string, subtrack *SubtitleTrack) error {
 	subFilename := mkvFilenameNoExtension + ".default." + SubtitleExtensionMap[subtrack.Codec]
 	subTempPath := "/tmp/" + subFilename
 	subFullpath := mkvPath + subFilename
-	subPathArgs := fmt.Sprintf("%d:%s", subtrack.TrackID-1, subTempPath)
-	args := []string{"tracks", pathIn, subPathArgs}
-	glog.V(5).Infof("Using mkvextract args: %v", shellescape.QuoteCommand(args))
-	cmd := exec.Command("mkvextract", args...)
-	out, err := cmd.CombinedOutput()
-	outStr := string(out)
+	err := ffmpeg.Input(pathIn).Get(strconv.Itoa(subtrack.TrackID)).Output(subTempPath).OverWriteOutput().Run()
 	if err != nil {
 		glog.Errorf("Could not extract subs from %v, %v", mkvFilename, err)
-		glog.Infoln("Output from mkvextract:")
-		glog.Infof("%v\n", outStr)
 		return err
 	}
-	glog.Infoln("Output from mkvextract:")
-	glog.Infof("%v\n", outStr)
 	err = Copy(subTempPath, subFullpath)
 	if err != nil {
 		glog.Errorf("Could not move sub file from %v to %v: %v", subTempPath, subFullpath, err)
