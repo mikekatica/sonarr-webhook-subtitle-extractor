@@ -49,7 +49,7 @@ func ExtractSubtitleFromFile(pathIn string, subtrack *SubtitleTrack) error {
 	subTempPath := "/tmp/" + subFilename
 	subFullpath := mkvPath + subFilename
 	subPathArgs := fmt.Sprintf("%d:%s", subtrack.TrackID-1, subTempPath)
-	args := []string{pathIn, "tracks", subPathArgs}
+	args := []string{"tracks", pathIn, subPathArgs}
 	glog.V(5).Infof("Using mkvextract args: %v", shellescape.QuoteCommand(args))
 	cmd := exec.Command("mkvextract", args...)
 	out, err := cmd.CombinedOutput()
