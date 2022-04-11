@@ -1,14 +1,13 @@
 package subtitleparser
 
 import (
-	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 	"strings"
 	"strconv"
 
-	"github.com/u2takey/ffmpeg-go" as ffmpeg
+	ffmpeg "github.com/u2takey/ffmpeg-go"
 	"github.com/golang/glog"
 )
 
