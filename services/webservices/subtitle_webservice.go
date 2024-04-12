@@ -63,7 +63,8 @@ func (w *SubtitleWebservice) ExtractSubtitleAction(lang subtitleparser.SubtitleL
 	}()
 	var res SubtitleExtractResult
 	res.File = filepath
-	defer w.DbEngine.NewInsert().Model(&res).Exec(context.Background())
+	deadline := time.Now().Add(60 * time.Second)
+	defer w.DbEngine.NewInsert().Model(&res).Exec(context.WithDeadline(context.Background(), deadline))
 	select {
 	case _ = <-waitForFile:
 		glog.Infof("File %v exists and is written", filepath)
@@ -223,7 +224,8 @@ func New(bindaddr string, connectionstring string) *SubtitleWebservice {
 		glog.Errorf("Could not connect to database: %v", err)
 		panic(err)
 	}
-	svc.DbEngine.NewCreateTable().Model((*SubtitleExtractResult)(nil)).Exec(context.Background())
+	deadline := time.Now().Add(60 * time.Second)
+	svc.DbEngine.NewCreateTable().Model((*SubtitleExtractResult)(nil)).Exec(context.WithDeadline(context.Background(), deadline))
 	r.POST("/extract/sonarr/*lang", svc.ExtractSubtitleSonarrAPI())
 	r.POST("/extract/simple/*lang", svc.ExtractSubtitleSimpleAPI())
 	r.POST("/extract/bulk", svc.ExtractSubtitleBulkAPI())
