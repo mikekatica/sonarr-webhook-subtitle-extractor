@@ -148,6 +148,13 @@ func (w *SubtitleWebservice) ExtractSubtitleSimpleAPI() gin.HandlerFunc {
 
 func (w *SubtitleWebservice) ExtractSubtitleBulkAPI() gin.HandlerFunc {
 	return func(context *gin.Context) {
+		defaultLang := strings.ReplaceAll(context.Param("lang"), "/", "")
+		var lang *string
+		lang = nil
+		if defaultLang != "" {
+			glog.V(4).Infof("Looking for language: %v", defaultLang)
+			lang = &defaultLang
+		}
 		var event BulkExtractRequest
 		err := context.Copy().ShouldBindJSON(&event)
 		glog.V(4).Infof("Recieved a request: %v", event)
