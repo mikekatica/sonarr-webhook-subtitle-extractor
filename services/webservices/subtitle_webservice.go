@@ -223,6 +223,7 @@ func New(bindaddr string, connectionstring string) *SubtitleWebservice {
 		glog.Errorf("Could not connect to database: %v", err)
 		panic(err)
 	}
+	svc.DbEngine.NewCreateTable().Model((*SubtitleExtractResult)(nil)).Exec(context.Background())
 	r.POST("/extract/sonarr/*lang", svc.ExtractSubtitleSonarrAPI())
 	r.POST("/extract/simple/*lang", svc.ExtractSubtitleSimpleAPI())
 	r.POST("/extract/bulk", svc.ExtractSubtitleBulkAPI())
