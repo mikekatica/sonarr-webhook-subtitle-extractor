@@ -1,10 +1,10 @@
-FROM golang:1.16.3-buster as builder
+FROM golang:1.22.2-bookworm as builder
 
 WORKDIR /go/src/sonarr-webhook-subtitle-extractor
 COPY . .
 RUN go get && go build
 
-FROM jrottenberg/ffmpeg:4-ubuntu
+FROM linuxserver/ffmpeg:7.0-cli-ls132
 
 WORKDIR /
 COPY --from=builder /go/src/sonarr-webhook-subtitle-extractor/sonarr-webhook-subtitle-extractor /

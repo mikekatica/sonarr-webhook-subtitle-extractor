@@ -9,8 +9,10 @@ import (
 
 func main() {
 	var bindaddr = flag.String("bindaddr", ":8111", "Location of the file to extract subtitles from")
+	var connection = flag.String("pguri", "REQUIRED", "pgsql connection string")
 	flag.Parse()
 	glog.Infof("Running mkv subtitle extractor webservice on %v...", *bindaddr)
-	g := webservices.New(*bindaddr)
+	glog.Infof("Using postgres connection %v...", *connection)
+	g := webservices.New(*bindaddr, *connection)
 	g.Serve()
 }

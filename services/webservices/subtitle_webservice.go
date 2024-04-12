@@ -1,6 +1,9 @@
 package webservices
 
 import (
+	"context"
+	"database/sql"
+	"fmt"
 	"net/http"
 	"os"
 	"path"
@@ -13,11 +16,15 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gobwas/glob"
 	"github.com/golang/glog"
+	"github.com/uptrace/bun"
+	"github.com/uptrace/bun/dialect/pgdialect"
+	"github.com/uptrace/bun/driver/pgdriver"
 )
 
 type SubtitleWebservice struct {
 	Engine      *gin.Engine
 	BindAddress string
+	DbEngine    *bun.DB
 }
 
 type SimpleExtractRequest struct {
@@ -28,6 +35,19 @@ type BulkExtractRequest struct {
 	Basepath      string `json:"basepath"`
 	FileGlob      string `json:"fileglob"`
 	TrackOverride int64  `json:"tracknum"`
+}
+
+type SubtitleExtractResult struct{
+	bun.BaseModel `bun:"table:subtitle_extract_results,alias:ser"`
+
+	ID      int64  `bun:"id,pk,autoincrement"`
+	File    string `bun:"file,notnull"`
+	Result  bool   `bun:"result,notnull"`
+	Message string `bun:"message,notnull"`
+}
+
+func (w *SubtitleWebservice) PingDb() error {
+	return w.DbEngine.Ping()
 }
 
 func (w *SubtitleWebservice) ExtractSubtitleAction(lang subtitleparser.SubtitleLanguageDefault, filepath string) {
@@ -41,26 +61,42 @@ func (w *SubtitleWebservice) ExtractSubtitleAction(lang subtitleparser.SubtitleL
 		finfo, _ := os.Stat(filepath)
 		waitForFile <- finfo
 	}()
+	var res SubtitleExtractResult
+	res.File = filepath
+	defer w.DbEngine.NewInsert().Model(&res).Exec(context.Background())
 	select {
 	case _ = <-waitForFile:
 		glog.Infof("File %v exists and is written", filepath)
 	case <-time.After(15 * time.Minute):
 		glog.Warningf("File %v does not exist after 15 minute timeout", filepath)
+		res.Result = false
+		res.Message = "File does not exist after 15 minute timeout"
 		return
 	}
 	subs, err := subtitleparser.ExtractSubtitleInfo(filepath)
 	if err != nil {
 		glog.Errorf("Couldn't extract sub track info from %v: %v", filepath, err)
+		res.Result = false
+		res.Message = fmt.Sprintf("Couldn't extract sub track info from %v: %v", filepath, err)
+		return
 	}
 	track, err := subtitleparser.DecideSubtitleTrack(lang, subs)
 	if err != nil {
 		glog.Errorf("Couldn't decide subs from %v: %v", filepath, err)
+		res.Result = false
+		res.Message = fmt.Sprintf("Couldn't decide subs from %v: %v", filepath, err)
 		return
 	}
 	err = subtitleparser.ExtractSubtitleFromFile(filepath, track)
 	if err != nil {
 		glog.Errorf("Couldn't extract subs from %v: %v", filepath, err)
+		res.Result = false
+		res.Message = fmt.Sprintf("Couldn't extract subs from %v: %v", filepath, err)
+		return
 	}
+	res.Result = true
+	res.Message = "Extraction Succeeded"
+	return
 }
 
 func (w *SubtitleWebservice) ExtractSubtitleAction2(filepath string, track int64) {
@@ -148,13 +184,6 @@ func (w *SubtitleWebservice) ExtractSubtitleSimpleAPI() gin.HandlerFunc {
 
 func (w *SubtitleWebservice) ExtractSubtitleBulkAPI() gin.HandlerFunc {
 	return func(context *gin.Context) {
-		defaultLang := strings.ReplaceAll(context.Param("lang"), "/", "")
-		var lang *string
-		lang = nil
-		if defaultLang != "" {
-			glog.V(4).Infof("Looking for language: %v", defaultLang)
-			lang = &defaultLang
-		}
 		var event BulkExtractRequest
 		err := context.Copy().ShouldBindJSON(&event)
 		glog.V(4).Infof("Recieved a request: %v", event)
@@ -181,11 +210,18 @@ func (w *SubtitleWebservice) ExtractSubtitleBulkAPI() gin.HandlerFunc {
 	}
 }
 
-func New(bindaddr string) *SubtitleWebservice {
+func New(bindaddr string, connectionstring string) *SubtitleWebservice {
 	r := gin.Default()
+	sqldb := sql.OpenDB(pgdriver.NewConnector(pgdriver.WithDSN(connectionstring)))
+	engine := bun.NewDB(sqldb, pgdialect.New())
 	svc := SubtitleWebservice{
 		Engine:      r,
 		BindAddress: bindaddr,
+		DbEngine:    engine,
+	}
+	if err := svc.PingDb(); err != nil {
+		glog.Errorf("Could not connect to database: %v", err)
+		panic(err)
 	}
 	r.POST("/extract/sonarr/*lang", svc.ExtractSubtitleSonarrAPI())
 	r.POST("/extract/simple/*lang", svc.ExtractSubtitleSimpleAPI())
