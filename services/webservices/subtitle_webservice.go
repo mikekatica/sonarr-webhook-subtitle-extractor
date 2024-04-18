@@ -246,7 +246,7 @@ func New(bindaddr string, connectionstring string) *SubtitleWebservice {
 	r.LoadHTMLGlob("public/*")
 	r.POST("/extract/sonarr/*lang", svc.ExtractSubtitleSonarrAPI())
 	r.POST("/extract/simple/*lang", svc.ExtractSubtitleSimpleAPI())
-	r.POST("/extract/form/*lang", svc.ExtractSubtitleSimpleAPI())
+	r.POST("/extract/form/*lang", svc.ExtractSubtitleFormAPI())
 	r.POST("/extract/bulk", svc.ExtractSubtitleBulkAPI())
 	r.GET("/results", func (c *gin.Context) {
 		var res []SubtitleExtractResult
