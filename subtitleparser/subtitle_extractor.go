@@ -36,6 +36,7 @@ func Copy(src, dst string) error {
 var SubtitleExtensionMap = map[string]string{
 	"S_TEXT/SSA": "ssa",
 	"S_TEXT/ASS": "ass",
+	"S_TEXT/UTF8": "srt",
 }
 
 func ExtractSubtitleFromFile(pathIn string, subtrack *SubtitleTrack) error {
