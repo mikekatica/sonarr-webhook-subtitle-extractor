@@ -1,10 +1,17 @@
 <html>
     <head>
         <title>Subtitle Extractor</title>
+        <link rel="stylesheet" href="https://cdn.datatables.net/2.0.5/css/dataTables.dataTables.css" />
+        <script src="https://cdn.datatables.net/2.0.5/js/dataTables.js"></script>
+        <script>
+            $(document).ready( function () {
+                $('#resultsTable').DataTable();
+            } );
+        </script>
     </head>
     <body>
-        <h2></h2>Last 20 Extracts</h2>
-        <table>
+        <h2></h2>Last 100 Extracts</h2>
+        <table id="resultsTable">
             <tr>
                 <th>File Name</th>
                 <th>Result</th>
