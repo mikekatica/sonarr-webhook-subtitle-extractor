@@ -13,6 +13,7 @@
         <h2></h2>Last 100 Extracts</h2>
         <table id="resultsTable">
             <tr>
+                <th>ID</th>
                 <th>File Name</th>
                 <th>Result</th>
                 <th>Message</th>
@@ -20,6 +21,7 @@
             </tr>
             {{ range .results }}
             <tr>
+                <td>{{ .ID }}</td>
                 <td>{{ .File }}</td>
                 <td>{{ .Result }}</td>
                 <td>{{ .Message }}</td>
