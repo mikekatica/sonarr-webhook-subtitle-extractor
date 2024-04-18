@@ -1,0 +1,29 @@
+<html>
+    <head>
+        <title>Subtitle Extractor</title>
+    </head>
+    <body>
+        <h2></h2>Last 20 Extracts</h2>
+        <table>
+            <tr>
+                <th>File Name</th>
+                <th>Result</th>
+                <th>Message</th>
+                <th>Retry</th>
+            </tr>
+            {{ range $ep := .results }}
+            <tr>
+                <td>{{ .File }}</td>
+                <td>{{ .Result }}</td>
+                <td>{{ .Message }}</td>
+                <td>
+                    <form action="/extract/simple/en">
+                        <input type="hidden" name="Filepath" value="{{.File}}" />
+                        <button type="submit">Retry</button>
+                    </form>
+                </td>
+            </tr>
+            {{ end }}
+        </table>
+    </body>
+</html>

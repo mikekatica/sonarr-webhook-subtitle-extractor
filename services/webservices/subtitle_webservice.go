@@ -226,9 +226,18 @@ func New(bindaddr string, connectionstring string) *SubtitleWebservice {
 	}
 	deadline := time.Now().Add(60 * time.Second)
 	svc.DbEngine.NewCreateTable().Model((*SubtitleExtractResult)(nil)).Exec(context.WithDeadline(context.Background(), deadline))
+	r.LoadHTMLGlob("public/*")
 	r.POST("/extract/sonarr/*lang", svc.ExtractSubtitleSonarrAPI())
 	r.POST("/extract/simple/*lang", svc.ExtractSubtitleSimpleAPI())
 	r.POST("/extract/bulk", svc.ExtractSubtitleBulkAPI())
+	r.GET("/results", func (c *gin.Context) {
+		cdeadline := time.Now().Add(60 * time.Second)
+		results := new(SubtitleExtractResult)
+		db.NewSelect().Model(results).Order("id DESC").Limit(20).Scan(context.WithDeadline(context.Background(), cdeadline))
+		c.HTML(http.StatusOK, "index.html", gin.H{
+			"results": results
+		})
+	})
 	return &svc
 }
 
