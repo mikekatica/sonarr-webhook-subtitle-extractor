@@ -17,10 +17,12 @@
                 <td>{{ .Result }}</td>
                 <td>{{ .Message }}</td>
                 <td>
+                    {{ if not .Result }}
                     <form action="/extract/form/en" method="post">
                         <input type="hidden" name="Filepath" value="{{.File}}" />
                         <button type="submit">Retry</button>
                     </form>
+                    {{{ end }}}
                 </td>
             </tr>
             {{ end }}
