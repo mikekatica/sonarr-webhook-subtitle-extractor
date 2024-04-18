@@ -233,7 +233,7 @@ func New(bindaddr string, connectionstring string) *SubtitleWebservice {
 	r.GET("/results", func (c *gin.Context) {
 		cdeadline := time.Now().Add(60 * time.Second)
 		results := new(SubtitleExtractResult)
-		db.NewSelect().Model(results).Order("id DESC").Limit(20).Scan(context.WithDeadline(context.Background(), cdeadline))
+		svc.DbEngine.NewSelect().Model(results).Order("id DESC").Limit(20).Scan(context.WithDeadline(context.Background(), cdeadline))
 		c.HTML(http.StatusOK, "index.html", gin.H{
 			"results": results
 		})
