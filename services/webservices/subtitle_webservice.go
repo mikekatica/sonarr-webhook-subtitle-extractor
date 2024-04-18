@@ -251,7 +251,6 @@ func New(bindaddr string, connectionstring string) *SubtitleWebservice {
 	r.GET("/results", func (c *gin.Context) {
 		var res []SubtitleExtractResult
 		err := svc.DbEngine.NewSelect().Model(&res).Order("id DESC").Limit(20).Scan(c.Request.Context())
-		glog.Infof("Received results: %v", res)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
