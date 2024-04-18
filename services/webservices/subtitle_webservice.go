@@ -66,7 +66,10 @@ func (w *SubtitleWebservice) ExtractSubtitleAction(lang subtitleparser.SubtitleL
 	defer func () {
 		deadline := time.Now().Add(60 * time.Second)
 		glog.Infof("Writing result for %v to database", res.File)
-		w.DbEngine.NewInsert().Model(&res).Exec(context.WithDeadline(context.Background(), deadline))
+		_, err := w.DbEngine.NewInsert().Model(&res).Exec(context.WithDeadline(context.Background(), deadline))
+		if err != nil {
+			glog.Errorf("Error writing extract result for %v: %v", res.File, err)
+		}
 	}()
 	select {
 	case _ = <-waitForFile:
