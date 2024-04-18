@@ -17,7 +17,7 @@
                 <td>{{ .Result }}</td>
                 <td>{{ .Message }}</td>
                 <td>
-                    <form action="/extract/simple/en">
+                    <form action="/extract/simple/en" method="post">
                         <input type="hidden" name="Filepath" value="{{.File}}" />
                         <button type="submit">Retry</button>
                     </form>
