@@ -63,8 +63,11 @@ func (w *SubtitleWebservice) ExtractSubtitleAction(lang subtitleparser.SubtitleL
 	}()
 	var res SubtitleExtractResult
 	res.File = filepath
-	deadline := time.Now().Add(60 * time.Second)
-	defer w.DbEngine.NewInsert().Model(&res).Exec(context.WithDeadline(context.Background(), deadline))
+	defer func () {
+		deadline := time.Now().Add(60 * time.Second)
+		glog.Infof("Writing result for %v to database", res.File)
+		w.DbEngine.NewInsert().Model(&res).Exec(context.WithDeadline(context.Background(), deadline))
+	}()
 	select {
 	case _ = <-waitForFile:
 		glog.Infof("File %v exists and is written", filepath)
