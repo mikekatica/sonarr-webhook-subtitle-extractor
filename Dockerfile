@@ -8,6 +8,7 @@ FROM linuxserver/ffmpeg:7.0-cli-ls132
 
 WORKDIR /
 COPY --from=builder /go/src/sonarr-webhook-subtitle-extractor/sonarr-webhook-subtitle-extractor /
+COPY public/ /
 
 ENTRYPOINT [ "/sonarr-webhook-subtitle-extractor", "--alsologtostderr" ]
 CMD []
