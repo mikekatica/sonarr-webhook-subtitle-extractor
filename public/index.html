@@ -11,7 +11,7 @@
                 <th>Message</th>
                 <th>Retry</th>
             </tr>
-            {{ range $ep := .results }}
+            {{ range .results }}
             <tr>
                 <td>{{ .File }}</td>
                 <td>{{ .Result }}</td>
