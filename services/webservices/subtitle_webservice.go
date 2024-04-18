@@ -231,9 +231,8 @@ func New(bindaddr string, connectionstring string) *SubtitleWebservice {
 	r.POST("/extract/simple/*lang", svc.ExtractSubtitleSimpleAPI())
 	r.POST("/extract/bulk", svc.ExtractSubtitleBulkAPI())
 	r.GET("/results", func (c *gin.Context) {
-		cdeadline := time.Now().Add(60 * time.Second)
 		var res []SubtitleExtractResult
-		err := svc.DbEngine.NewSelect().Model(&res).Order("id DESC").Limit(20).Scan(context.WithDeadline(context.Background(), cdeadline))
+		err := svc.DbEngine.NewSelect().Model(&res).Order("id DESC").Limit(20).Scan(c)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
