@@ -211,6 +211,23 @@ func (w *SubtitleWebservice) ExtractSubtitleBulkAPI() gin.HandlerFunc {
 	}
 }
 
+func (w *SubtitleWebservice) ExtractSubtitleFormAPI() gin.HandlerFunc {
+	return func(context *gin.Context) {
+		defaultLang := strings.ReplaceAll(context.Param("lang"), "/", "")
+		var lang *string
+		lang = nil
+		if defaultLang != "" {
+			glog.V(4).Infof("Looking for language: %v", defaultLang)
+			lang = &defaultLang
+		}
+		var event SimpleExtractRequest
+		event.Filepath = context.PostForm("Filepath")
+		glog.V(4).Infof("Recieved a request: %v", event)
+		context.HTML(http.StatusOK, "repro.html", gin.H{"file": event.Filepath})
+		go w.ExtractSubtitleAction(subtitleparser.SubtitleLanguageDefault{DefaultLang: lang}, event.Filepath)
+	}
+}
+
 func New(bindaddr string, connectionstring string) *SubtitleWebservice {
 	r := gin.Default()
 	sqldb := sql.OpenDB(pgdriver.NewConnector(pgdriver.WithDSN(connectionstring)))
@@ -229,6 +246,7 @@ func New(bindaddr string, connectionstring string) *SubtitleWebservice {
 	r.LoadHTMLGlob("public/*")
 	r.POST("/extract/sonarr/*lang", svc.ExtractSubtitleSonarrAPI())
 	r.POST("/extract/simple/*lang", svc.ExtractSubtitleSimpleAPI())
+	r.POST("/extract/form/*lang", svc.ExtractSubtitleSimpleAPI())
 	r.POST("/extract/bulk", svc.ExtractSubtitleBulkAPI())
 	r.GET("/results", func (c *gin.Context) {
 		var res []SubtitleExtractResult
