@@ -232,13 +232,13 @@ func New(bindaddr string, connectionstring string) *SubtitleWebservice {
 	r.POST("/extract/bulk", svc.ExtractSubtitleBulkAPI())
 	r.GET("/results", func (c *gin.Context) {
 		cdeadline := time.Now().Add(60 * time.Second)
-		results := new(SubtitleExtractResult)
-		err := svc.DbEngine.NewSelect().Model(&results).Order("id DESC").Limit(20).Scan(context.WithDeadline(context.Background(), cdeadline))
+		var res SubtitleExtractResult
+		err := svc.DbEngine.NewSelect().Model(&res).Order("id DESC").Limit(20).Scan(context.WithDeadline(context.Background(), cdeadline))
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		c.HTML(http.StatusOK, "index.html", gin.H{"results": results})
+		c.HTML(http.StatusOK, "index.html", gin.H{"results": res})
 	})
 	return &svc
 }
