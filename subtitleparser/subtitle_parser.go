@@ -59,7 +59,7 @@ func (p *SubtitleTrackHandler) HandleMasterBegin(id mkvparse.ElementID, info mkv
 		p.currentCodec = nil
 		return true, nil
 	default:
-		glog.Infof("%s- %s:\n", indent(info.Level), mkvparse.NameForElementID(id))
+		glog.V(10).Infof("%s- %s:\n", indent(info.Level), mkvparse.NameForElementID(id))
 		return true, nil
 	}
 }
@@ -142,7 +142,7 @@ func ExtractSubtitleInfo(filepath string) (map[int64]SubtitleTrack, error) {
 		Subtitles: make(map[int64]SubtitleTrack),
 	}
 	glog.V(4).Info("Parsing sub tracks from mkv")
-	err := mkvparse.Parse(file, &h)
+	err := mkvparse.ParseSections(file, &h, mkvparse.TrackEntryElement, mkvParse.TrackEntryElement)
 	if err != nil {
 		glog.Error(err)
 	}
