@@ -115,21 +115,21 @@ func (p *SubtitleTrackHandler) HandleInteger(id mkvparse.ElementID, value int64,
 }
 
 func (p *SubtitleTrackHandler) HandleFloat(id mkvparse.ElementID, value float64, info mkvparse.ElementInfo) error {
-	glog.V(4).Infof("%s- %v: %v\n", indent(info.Level), mkvparse.NameForElementID(id), value)
+	glog.V(10).Infof("%s- %v: %v\n", indent(info.Level), mkvparse.NameForElementID(id), value)
 	return nil
 }
 
 func (p *SubtitleTrackHandler) HandleDate(id mkvparse.ElementID, value time.Time, info mkvparse.ElementInfo) error {
-	glog.V(4).Infof("%s- %v: %v\n", indent(info.Level), mkvparse.NameForElementID(id), value)
+	glog.V(10).Infof("%s- %v: %v\n", indent(info.Level), mkvparse.NameForElementID(id), value)
 	return nil
 }
 
 func (p *SubtitleTrackHandler) HandleBinary(id mkvparse.ElementID, value []byte, info mkvparse.ElementInfo) error {
 	switch id {
 	case mkvparse.SeekIDElement:
-		glog.V(4).Infof("%s- %v: %x\n", indent(info.Level), mkvparse.NameForElementID(id), value)
+		glog.V(10).Infof("%s- %v: %x\n", indent(info.Level), mkvparse.NameForElementID(id), value)
 	default:
-		glog.V(4).Infof("%s- %v: <binary> (%d)\n", indent(info.Level), mkvparse.NameForElementID(id), info.Size)
+		glog.V(10).Infof("%s- %v: <binary> (%d)\n", indent(info.Level), mkvparse.NameForElementID(id), info.Size)
 	}
 	return nil
 }
