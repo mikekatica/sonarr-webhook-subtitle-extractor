@@ -2,6 +2,7 @@ package subtitleparser
 
 import (
 	"os"
+	"strings"
 	"time"
 
 	"github.com/golang/glog"
@@ -46,6 +47,10 @@ type SubtitleTrackHandler struct {
 	Subtitles        map[int64]SubtitleTrack
 }
 
+func indent(n int) string {
+	return strings.Repeat("  ", n)
+}
+
 func (p *SubtitleTrackHandler) HandleMasterBegin(id mkvparse.ElementID, info mkvparse.ElementInfo) (bool, error) {
 	glog.Infof("MasterBegin: Got element ID of %v", id)
 	if id == mkvparse.TrackEntryElement {
@@ -71,7 +76,7 @@ func (p *SubtitleTrackHandler) HandleMasterEnd(id mkvparse.ElementID, info mkvpa
 }
 
 func (p *SubtitleTrackHandler) HandleString(id mkvparse.ElementID, value string, info mkvparse.ElementInfo) error {
-
+	glog.V(4).Infof("%s- %v: %q\n", indent(info.Level), mkvparse.NameForElementID(id), value)
 	switch id {
 	case mkvparse.LanguageElement:
 		glog.V(4).Infof("Found a language for the track of %v", value)
@@ -89,6 +94,8 @@ func (p *SubtitleTrackHandler) HandleString(id mkvparse.ElementID, value string,
 }
 
 func (p *SubtitleTrackHandler) HandleInteger(id mkvparse.ElementID, value int64, info mkvparse.ElementInfo) error {
+	glog.V(4).Infof("%s- %v: %q\n", indent(info.Level), mkvparse.NameForElementID(id), value)
+	glog.V(4).Infof("Found a language for the track of %v", value)
 	switch id {
 	case mkvparse.TrackUIDElement:
 		p.currentTrackUID = value
@@ -105,14 +112,22 @@ func (p *SubtitleTrackHandler) HandleInteger(id mkvparse.ElementID, value int64,
 }
 
 func (p *SubtitleTrackHandler) HandleFloat(id mkvparse.ElementID, value float64, info mkvparse.ElementInfo) error {
+	glog.V(4).Infof("%s- %v: %v\n", indent(info.Level), mkvparse.NameForElementID(id), value)
 	return nil
 }
 
 func (p *SubtitleTrackHandler) HandleDate(id mkvparse.ElementID, value time.Time, info mkvparse.ElementInfo) error {
+	glog.V(4).Infof("%s- %v: %v\n", indent(info.Level), mkvparse.NameForElementID(id), value)
 	return nil
 }
 
 func (p *SubtitleTrackHandler) HandleBinary(id mkvparse.ElementID, value []byte, info mkvparse.ElementInfo) error {
+	switch id {
+	case mkvparse.SeekIDElement:
+		glog.V(4).Infof("%s- %v: %x\n", indent(info.Level), mkvparse.NameForElementID(id), value)
+	default:
+		glog.V(4).Infof("%s- %v: <binary> (%d)\n", indent(info.Level), mkvparse.NameForElementID(id), info.Size)
+	}
 	return nil
 }
 
