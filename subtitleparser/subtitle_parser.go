@@ -54,7 +54,7 @@ func indent(n int) string {
 func (p *SubtitleTrackHandler) HandleMasterBegin(id mkvparse.ElementID, info mkvparse.ElementInfo) (bool, error) {
 	switch id {
 	case mkvparse.TrackEntryElement:
-		glog.V(4).Infof("Found a subtitle, Descending into element")
+		glog.V(4).Infof("Found a Track Entry, Descending into element")
 		p.currentLanguage = &defaultlang
 		p.currentCodec = nil
 		return true, nil
@@ -64,7 +64,6 @@ func (p *SubtitleTrackHandler) HandleMasterBegin(id mkvparse.ElementID, info mkv
 	}
 }
 func (p *SubtitleTrackHandler) HandleMasterEnd(id mkvparse.ElementID, info mkvparse.ElementInfo) error {
-	glog.V(4).Infof("MasterEnd: Got element ID of %v", id)
 	if id == mkvparse.TrackEntryElement && p.currentint64 == SUBTITLE {
 		sub := SubtitleTrack{
 			TrackID:  p.currentTrackID,
@@ -73,13 +72,14 @@ func (p *SubtitleTrackHandler) HandleMasterEnd(id mkvparse.ElementID, info mkvpa
 			Default:  p.currentIsDefault,
 			Forced:   p.currentForced,
 		}
+		glog.V(4).Infof("Processed a subtitle: %+v", sub)
 		p.Subtitles[p.currentTrackUID] = sub
 	}
 	return nil
 }
 
 func (p *SubtitleTrackHandler) HandleString(id mkvparse.ElementID, value string, info mkvparse.ElementInfo) error {
-	glog.V(4).Infof("%s- %v: %q\n", indent(info.Level), mkvparse.NameForElementID(id), value)
+	glog.V(10).Infof("%s- %v: %q\n", indent(info.Level), mkvparse.NameForElementID(id), value)
 	switch id {
 	case mkvparse.LanguageElement:
 		glog.V(4).Infof("Found a language for the track of %v", value)
@@ -97,8 +97,7 @@ func (p *SubtitleTrackHandler) HandleString(id mkvparse.ElementID, value string,
 }
 
 func (p *SubtitleTrackHandler) HandleInteger(id mkvparse.ElementID, value int64, info mkvparse.ElementInfo) error {
-	glog.V(4).Infof("%s- %v: %q\n", indent(info.Level), mkvparse.NameForElementID(id), value)
-	glog.V(4).Infof("Found a language for the track of %v", value)
+	glog.V(10).Infof("%s- %v: %q\n", indent(info.Level), mkvparse.NameForElementID(id), value)
 	switch id {
 	case mkvparse.TrackUIDElement:
 		p.currentTrackUID = value
@@ -142,7 +141,7 @@ func ExtractSubtitleInfo(filepath string) (map[int64]SubtitleTrack, error) {
 		Subtitles: make(map[int64]SubtitleTrack),
 	}
 	glog.V(4).Info("Parsing sub tracks from mkv")
-	err := mkvparse.ParseSections(file, &h, mkvparse.TrackEntryElement, mkvParse.TrackElement)
+	err := mkvparse.ParseSections(file, &h, mkvparse.TrackEntryElement, mkvParse.TracksElement)
 	if err != nil {
 		glog.Error(err)
 	}
