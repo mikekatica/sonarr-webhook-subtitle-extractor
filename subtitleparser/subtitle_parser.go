@@ -52,13 +52,16 @@ func indent(n int) string {
 }
 
 func (p *SubtitleTrackHandler) HandleMasterBegin(id mkvparse.ElementID, info mkvparse.ElementInfo) (bool, error) {
-	glog.Infof("MasterBegin: Got element ID of %v", id)
-	if id == mkvparse.TrackEntryElement {
+	switch id {
+	case mkvparse.TrackEntryElement:
 		glog.V(4).Infof("Found a subtitle, Descending into element")
 		p.currentLanguage = &defaultlang
 		p.currentCodec = nil
+		return true, nil
+	default:
+		glog.Infof("%s- %s:\n", indent(info.Level), mkvparse.NameForElementID(id))
+		return true, nil
 	}
-	return true, nil
 }
 func (p *SubtitleTrackHandler) HandleMasterEnd(id mkvparse.ElementID, info mkvparse.ElementInfo) error {
 	glog.V(4).Infof("MasterEnd: Got element ID of %v", id)
