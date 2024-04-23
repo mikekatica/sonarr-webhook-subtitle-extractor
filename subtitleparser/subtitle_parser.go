@@ -142,7 +142,7 @@ func ExtractSubtitleInfo(filepath string) (map[int64]SubtitleTrack, error) {
 		Subtitles: make(map[int64]SubtitleTrack),
 	}
 	glog.V(4).Info("Parsing sub tracks from mkv")
-	err := mkvparse.ParseSections(file, &h, mkvparse.TracksElement)
+	err := mkvparse.Parse(file, &h)
 	if err != nil {
 		glog.Error(err)
 	}
