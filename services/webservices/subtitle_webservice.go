@@ -208,7 +208,7 @@ func (w *SubtitleWebservice) ExtractSubtitleBulkAPI() gin.HandlerFunc {
 					}
 					glog.V(4).Infof("Processing file found at: %v", path)
 					if event.TrackOverride != nil {
-						go w.ExtractSubtitleAction2(path, &event.TrackOverride)
+						go w.ExtractSubtitleAction2(path, *event.TrackOverride)
 					} else {
 						go w.ExtractSubtitleAction(subtitleparser.SubtitleLanguageDefault{DefaultLang: nil}, path)
 					}
