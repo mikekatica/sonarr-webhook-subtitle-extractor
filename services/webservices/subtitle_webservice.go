@@ -190,6 +190,13 @@ func (w *SubtitleWebservice) ExtractSubtitleSimpleAPI() gin.HandlerFunc {
 
 func (w *SubtitleWebservice) ExtractSubtitleBulkAPI() gin.HandlerFunc {
 	return func(context *gin.Context) {
+		defaultLang := strings.ReplaceAll(context.Param("lang"), "/", "")
+		var lang *string
+		lang = nil
+		if defaultLang != "" {
+			glog.V(4).Infof("Looking for language: %v", defaultLang)
+			lang = &defaultLang
+		}
 		var event BulkExtractRequest
 		err := context.Copy().ShouldBindJSON(&event)
 		glog.V(4).Infof("Recieved a request: %v", event)
@@ -210,7 +217,7 @@ func (w *SubtitleWebservice) ExtractSubtitleBulkAPI() gin.HandlerFunc {
 					if event.TrackOverride != nil {
 						go w.ExtractSubtitleAction2(path, *event.TrackOverride)
 					} else {
-						go w.ExtractSubtitleAction(subtitleparser.SubtitleLanguageDefault{DefaultLang: nil}, path)
+						go w.ExtractSubtitleAction(subtitleparser.SubtitleLanguageDefault{DefaultLang: lang}, path)
 					}
 				} else if err != nil {
 					return err
@@ -256,7 +263,7 @@ func New(bindaddr string, connectionstring string) *SubtitleWebservice {
 	r.POST("/extract/sonarr/*lang", svc.ExtractSubtitleSonarrAPI())
 	r.POST("/extract/simple/*lang", svc.ExtractSubtitleSimpleAPI())
 	r.POST("/extract/form/*lang", svc.ExtractSubtitleFormAPI())
-	r.POST("/extract/bulk/", svc.ExtractSubtitleBulkAPI())
+	r.POST("/extract/bulk/*lang", svc.ExtractSubtitleBulkAPI())
 	r.GET("/results", func (c *gin.Context) {
 		var res []SubtitleExtractResult
 		err := svc.DbEngine.NewSelect().Model(&res).Order("id DESC").Limit(100).Scan(c.Request.Context())
