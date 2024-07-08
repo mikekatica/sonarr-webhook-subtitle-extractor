@@ -34,7 +34,7 @@ type SimpleExtractRequest struct {
 type BulkExtractRequest struct {
 	Basepath      string `json:"basepath"`
 	FileGlob      string `json:"fileglob"`
-	TrackOverride int64  `json:"tracknum"`
+	TrackOverride *int64 `json:"tracknum,omitempty"`
 }
 
 type SubtitleExtractResult struct{
@@ -207,7 +207,11 @@ func (w *SubtitleWebservice) ExtractSubtitleBulkAPI() gin.HandlerFunc {
 						return err
 					}
 					glog.V(4).Infof("Processing file found at: %v", path)
-					go w.ExtractSubtitleAction2(path, event.TrackOverride)
+					if event.TrackOverride != nil {
+						go w.ExtractSubtitleAction2(path, &event.TrackOverride)
+					} else {
+						go w.ExtractSubtitleAction(subtitleparser.SubtitleLanguageDefault{DefaultLang: nil}, path)
+					}
 				} else if err != nil {
 					return err
 				}
@@ -252,7 +256,7 @@ func New(bindaddr string, connectionstring string) *SubtitleWebservice {
 	r.POST("/extract/sonarr/*lang", svc.ExtractSubtitleSonarrAPI())
 	r.POST("/extract/simple/*lang", svc.ExtractSubtitleSimpleAPI())
 	r.POST("/extract/form/*lang", svc.ExtractSubtitleFormAPI())
-	r.POST("/extract/bulk", svc.ExtractSubtitleBulkAPI())
+	r.POST("/extract/bulk/", svc.ExtractSubtitleBulkAPI())
 	r.GET("/results", func (c *gin.Context) {
 		var res []SubtitleExtractResult
 		err := svc.DbEngine.NewSelect().Model(&res).Order("id DESC").Limit(100).Scan(c.Request.Context())
